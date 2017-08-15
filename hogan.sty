@@ -1,0 +1,144 @@
+\ProvidesPackage{hogan}[2017/08/15 v0.1]
+
+% Requirements
+\RequirePackage{tikz}
+\RequirePackage{xkeyval}
+
+
+% Main envieonments' Options
+\define@cmdkey{hogan}{cells}[3*3]{\@hogan@set@cells#1!}
+\def\@hogan@set@cells#1*#2!{%
+    \def\@hogan@cells@x{#1}%
+    \def\@hogan@cells@y{#2}%
+}
+\define@cmdkey{hogan}{size}[1cm*1cm]{\@hogan@set@size#1!}
+\def\@hogan@set@size#1*#2!{%
+    \def\@hogan@size@x{#1}%
+    \def\@hogan@size@y{#2}%
+}
+% Main environment
+\newenvironment{hogan}[1][cells=3*3,size=1cm*1cm]{%
+    % Execute Options
+    \setkeys{hogan}{#1}%
+    \begin{tikzpicture}[x=\@hogan@size@x,y=\@hogan@size@y]
+        \useasboundingbox (0,0) rectangle (\@hogan@cells@x,\@hogan@cells@y);
+}{\end{tikzpicture}}
+
+% Lines
+\newcount\@hogan@linecount
+\def\lines{\@hogan@linecount=\@hogan@cells@y\relax\@hogan@hline{0}}
+% #1 -> cell counter, #2 -> gobble, #3 -> pattern or overread
+\def\@hogan@hline#1#2+#3{%
+    \ifnum#1=\@hogan@cells@x\relax
+        \def\@hogan@hline@next{%
+            \advance\@hogan@linecount-1\relax
+            \@hogan@vline{0}#3%
+        }%
+    \else
+        \csname @hogan@hline@next@#3\endcsname{#1}%
+    \fi
+    \@hogan@hline@next
+}
+% Go to next column
+\def\@hogan@hline@gobble#1#2{%
+    \if#2+
+        \def\@hogan@hline@next{\@hogan@hline{#1}+}%
+    \else
+        \def\@hogan@hline@next{\@hogan@hline@gobble{#1}}%
+    \fi
+    \@hogan@hline@next
+}
+% Draw a hline or stopper
+\expandafter\def\csname @hogan@hline@next@+\endcsname#1{%
+    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}+}%
+}
+\expandafter\def\csname @hogan@hline@next@-\endcsname#1{%
+    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}}%
+    \draw[red] (#1, \@hogan@linecount) -- (\the\numexpr#1+1, \@hogan@linecount);
+}
+\expandafter\def\csname @hogan@hline@next@*\endcsname#1{%
+    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}}%
+    \draw[very thick,red] (#1, \@hogan@linecount) -- (\the\numexpr#1+1, \@hogan@linecount);
+}
+\expandafter\def\csname @hogan@hline@next@"\endcsname#1{%
+    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}}%
+    \draw[dash pattern=on 0.25mm off 0.25mm, red] (#1, \@hogan@linecount) -- (\the\numexpr#1+1, \@hogan@linecount);
+}
+% #1 -> cell counter, #2 -> pattern or overread
+\def\@hogan@vline#1#2{%
+    \ifnum\@hogan@linecount<0
+        \def\@hogan@vline@next{#2}%
+    \else\ifnum#1>\@hogan@cells@x\relax
+        \def\@hogan@vline@next{\@hogan@hline{0}#2}%
+    \else
+        \csname @hogan@vline@next@#2\endcsname{#1}%
+    \fi\fi
+    \@hogan@vline@next
+}
+% Draw a vline
+\expandafter\def\csname @hogan@vline@next@&\endcsname#1{%
+    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
+}
+\expandafter\def\csname @hogan@vline@next@.\endcsname#1{%
+    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
+}
+\expandafter\def\csname @hogan@vline@next@|\endcsname#1{%
+    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
+    \draw[red] (#1, \the\numexpr\@hogan@linecount+1) -- (#1, \@hogan@linecount);
+}
+\expandafter\def\csname @hogan@vline@next@*\endcsname#1{%
+    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
+    \draw[very thick,red] (#1, \the\numexpr\@hogan@linecount+1) -- (#1, \@hogan@linecount);
+}
+\expandafter\def\csname @hogan@vline@next@:\endcsname#1{%
+    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
+    \draw[dash pattern=on 0.25mm off 0.25mm, red] (#1, \the\numexpr\@hogan@linecount+1) -- (#1, \@hogan@linecount);
+}
+
+
+
+% Main envieonments' Options
+\define@cmdkey{textbox}{at}[(0,0)]{\@hogan@tbox@set@at#1}
+\def\@hogan@tbox@set@at(#1,#2){%
+    \def\@hogan@tbox@x{#1}%
+    \def\@hogan@tbox@y{#2}%
+}
+\define@cmdkey{textbox}{box}[1*1]{\@hogan@tbox@set@box#1!}
+\def\@hogan@tbox@set@box#1*#2!{%
+    \edef\@hogan@tbox@w{\the\dimexpr\@hogan@size@x * #1}%
+    \edef\@hogan@tbox@h{\the\dimexpr\@hogan@size@y * #2}%
+}
+\define@cmdkey{textbox}[@hogan@tbox@]{align}[left]{}
+
+% Text box
+\newcommand\ctextbox[2][at={(0,0)}, box=1*1, align=left]{%
+    % Execute options
+    \setkeys{textbox}{#1}%
+    \node[
+        align=\@hogan@tbox@align,
+        anchor=north west,
+        minimum width=\@hogan@tbox@w,
+        minimum height=\@hogan@tbox@h]
+        at (\@hogan@tbox@x, \the\numexpr\@hogan@cells@y-\@hogan@tbox@y)
+        {#2};
+}
+\newcommand\ltextbox[2][at={(0,0)}, box=1*1, align=left]{%
+    % Execute options
+    \setkeys{textbox}{#1}%
+    \node[
+        align=\@hogan@tbox@align,
+        anchor=north west,
+        minimum height=\@hogan@tbox@h]
+        at (\@hogan@tbox@x, \the\numexpr\@hogan@cells@y-\@hogan@tbox@y)
+        {#2};
+}
+\newcommand\rtextbox[2][at={(0,0)}, box=1*1, align=left]{%
+    % Execute options
+    \setkeys{textbox}{#1}%
+    \node[
+        align=\@hogan@tbox@align,
+        anchor=north east,
+        minimum height=\@hogan@tbox@h]
+        at (\@hogan@tbox@x, \the\numexpr\@hogan@cells@y-\@hogan@tbox@y)
+        {#2};
+}
