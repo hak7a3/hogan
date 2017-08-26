@@ -16,8 +16,10 @@
     \def\@hogan@size@x{#1}%
     \def\@hogan@size@y{#2}%
 }
+\presetkeys{hogan}{cells, size}{}
+
 % Main environment
-\newenvironment{hogan}[1][cells=3*3,size=1cm*1cm]{%
+\newenvironment{hogan}[1][]{%
     % Execute Options
     \setkeys{hogan}{#1}%
     \begin{tikzpicture}[x=\@hogan@size@x,y=\@hogan@size@y]
@@ -106,12 +108,16 @@
 \define@cmdkey{textbox}{box}[1*1]{\@hogan@tbox@set@box#1!}
 \def\@hogan@tbox@set@box#1*#2!{%
     \edef\@hogan@tbox@w{\the\dimexpr\@hogan@size@x * #1}%
+    \edef\@hogan@tbox@ww{#1}%
     \edef\@hogan@tbox@h{\the\dimexpr\@hogan@size@y * #2}%
+    \edef\@hogan@tbox@hh{#2}%
 }
 \define@cmdkey{textbox}[@hogan@tbox@]{align}[left]{}
+\presetkeys{textbox}{at, box, align}{}
+
 
 % Text box
-\newcommand\ctextbox[2][at={(0,0)}, box=1*1, align=left]{%
+\newcommand\ctextbox[2][]{%
     % Execute options
     \setkeys{textbox}{#1}%
     \node[
@@ -122,7 +128,7 @@
         at (\@hogan@tbox@x, \the\numexpr\@hogan@cells@y-\@hogan@tbox@y)
         {#2};
 }
-\newcommand\ltextbox[2][at={(0,0)}, box=1*1, align=left]{%
+\newcommand\ltextbox[2][]{%
     % Execute options
     \setkeys{textbox}{#1}%
     \node[
@@ -132,13 +138,13 @@
         at (\@hogan@tbox@x, \the\numexpr\@hogan@cells@y-\@hogan@tbox@y)
         {#2};
 }
-\newcommand\rtextbox[2][at={(0,0)}, box=1*1, align=left]{%
+\newcommand\rtextbox[2][]{%
     % Execute options
     \setkeys{textbox}{#1}%
     \node[
         align=\@hogan@tbox@align,
         anchor=north east,
         minimum height=\@hogan@tbox@h]
-        at (\@hogan@tbox@x, \the\numexpr\@hogan@cells@y-\@hogan@tbox@y)
+        at (\the\numexpr\@hogan@tbox@x+\@hogan@tbox@ww, \the\numexpr\@hogan@cells@y-\@hogan@tbox@y)
         {#2};
 }
