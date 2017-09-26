@@ -1,0 +1,39 @@
+\documentclass[dvipdfmx, a4j, landscape]{jsarticle}
+
+\usepackage[bold, expert]{otf}
+\usepackage[yu-win10,directunicode]{pxchfon}
+\usepackage[dvipdfm, margin=3mm]{geometry}
+\usepackage{hogan}
+
+\begin{document}
+\noindent
+\begin{hogan}[cells=13*8, size=0.55cm*0.55cm]
+    \begin{lines}
+        +------+------+------+------+------+--+--+--+--+--+********+********+********+
+        | \c[4]{\textbf{受付番号}}  :      .  .  .  .  .  * \c[3]{\textbf{開発種別}} :
+        +&     +&     +&     +&     +      +  +  +  +  +  +&       +&       +&       +
+        |      &      &      &      :      .  .  .  .  .  *        &        &        :
+        +******+******+******+******+******+**+**+**+**+**+""""""""+""""""""+""""""""+
+        * \c[4]{\textbf{部品方式}}  :      :  .  .  .  .  .        .        .        :
+        +&     +&     +&     +&     +      +  +  +  +  +  +        +        +        +
+        *      &      &      &      :      :  .  .  .  .  .        .        .        :
+        +""""""+""""""+""""""+""""""+""""""+""+""+""+""+""+""""""""+""""""""+""""""""+
+        *      :      \c[4]{住　　所}      :  .  .  .  .  .        .        .        .
+        +&     +      +      +      +      +  +  +  +  +  +        +        +        +
+        *      :      \c[4]{（開発場所）}  :  .  .  .  .  .        .        .        .
+        +&     +""""""+""""""+""""""+""""""+""+""+""+""+""+""""""""+""""""""+""""""""+
+        *      :      \c[4]{氏　　名}      :  .  .  .  .  .        .        .        .
+        +&     +&     +&     +&     +&     +  +  +  +  +  +        +        +        +
+        *      :      &      &      &      :  .  .  .  .  .        .        .        .
+        +""""""+""""""+""""""+""""""+""""""+""+""+""+""+""+""""""""+""""""""+""""""""+
+    \end{lines}
+    % title
+    \ctextbox[at={(0,4)}, align=center, box=1*4]{\hbox{\tate \textbf{お客さま}}}
+    % % data?
+    \ctextbox[at={(4,2)}, align=center, box=1*2]{\ajMaru{1}}
+    \ltextbox[at={(5,2)}, align=center, box=8*2]{{\Large 帳票}}
+    \ltextbox[at={(5,4)}, align=center, box=8*2]{{\large 第三新東京市}}
+    \ltextbox[at={(5,6)}, align=center, box=8*2]{{\Large \TeX{} 太郎}}
+\end{hogan}
+\hfil\par
+\end{document}

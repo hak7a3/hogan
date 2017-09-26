@@ -4,6 +4,12 @@
 \RequirePackage{tikz}
 \RequirePackage{xkeyval}
 
+% constants
+\def\@hogan@const@cbox{centerbox}
+\def\@hogan@const@lbox{leftbox}
+\def\@hogan@const@rbox{rightbox}
+
+
 
 % Main envieonments' Options
 \define@cmdkey{hogan}{cells}[3*3]{\@hogan@set@cells#1!}
@@ -28,7 +34,22 @@
 
 % Lines
 \newcount\@hogan@linecount
-\def\lines{\@hogan@linecount=\@hogan@cells@y\relax\@hogan@hline{0}}
+\def\lines{%
+    % initialize
+    \@hogan@linecount=\@hogan@cells@y\relax % cell counter
+    \def\@hogan@stack@cell@size{}% cell size calculation
+    \def\@hogan@stack@cell@text{}% cell text stack
+    % command preparation. See vertical lines definition 
+    \edef\c{\@hogan@const@cbox}% center
+    \edef\l{\@hogan@const@lbox}% left
+    \edef\r{\@hogan@const@rbox}% right
+    % start execution
+    \@hogan@hline{0}}
+\def\endlines{%
+    \@hogan@stack@cell@size
+    \@hogan@stack@cell@text
+}
+
 % #1 -> cell counter, #2 -> gobble, #3 -> pattern or overread
 \def\@hogan@hline#1#2+#3{%
     \ifnum#1=\@hogan@cells@x\relax
@@ -50,22 +71,7 @@
     \fi
     \@hogan@hline@next
 }
-% Draw a hline or stopper
-\expandafter\def\csname @hogan@hline@next@+\endcsname#1{%
-    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}+}%
-}
-\expandafter\def\csname @hogan@hline@next@-\endcsname#1{%
-    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}}%
-    \draw[red] (#1, \@hogan@linecount) -- (\the\numexpr#1+1, \@hogan@linecount);
-}
-\expandafter\def\csname @hogan@hline@next@*\endcsname#1{%
-    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}}%
-    \draw[very thick,red] (#1, \@hogan@linecount) -- (\the\numexpr#1+1, \@hogan@linecount);
-}
-\expandafter\def\csname @hogan@hline@next@"\endcsname#1{%
-    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}}%
-    \draw[dash pattern=on 0.25mm off 0.25mm, red] (#1, \@hogan@linecount) -- (\the\numexpr#1+1, \@hogan@linecount);
-}
+
 % #1 -> cell counter, #2 -> pattern or overread
 \def\@hogan@vline#1#2{%
     \ifnum\@hogan@linecount<0
@@ -77,29 +83,113 @@
     \fi\fi
     \@hogan@vline@next
 }
-% Draw a vline
-\expandafter\def\csname @hogan@vline@next@&\endcsname#1{%
-    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
+
+
+% hline and vline normal definitions
+%% definition command
+\def\hoganDefLine#1#2#3{% #1 -> horizontal letter, #2 -> vertical letter, #3 -> options of draw
+    % horizontal
+    \expandafter\def\csname @hogan@hline@next@#1\endcsname##1{%
+        \@hogan@h@common{##1}%
+        \draw[#3] (##1, \@hogan@linecount) -- (\the\numexpr##1+1, \@hogan@linecount);
+    }%
+    % vertical
+    \expandafter\def\csname @hogan@vline@next@#2\endcsname##1{%
+        \@hogan@v@common{##1}%
+        \draw[#3] (##1, \the\numexpr\@hogan@linecount+1) -- (##1, \@hogan@linecount);
+    }%
 }
+%% common part
+\def\@hogan@h@common#1{%
+    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}}%
+}
+\def\@hogan@v@common#1{%
+    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
+    % default cell size
+    \edef\@hogan@tmp@y{\the\numexpr\@hogan@cells@y-\@hogan@linecount-1}%
+    \expandafter\def\csname @hogan@h@#1@\@hogan@tmp@y\endcsname{1}%
+    \expandafter\def\csname @hogan@v@#1@\@hogan@tmp@y\endcsname{1}%
+}
+
+%% concrete definition
+\hoganDefLine{-}{|}{red} % normal line
+\hoganDefLine{*}{*}{very thick,red} % bold line
+\hoganDefLine{"}{:}{dash pattern=on 0.25mm off 0.25mm, red} % dotted (TODO: pattern)
+
+% special definition util
+\def\@hogan@add@stack@cell@size#1#2#3#4#5{% #1 -> h or v, (#2,#3) -> target, (#4,#5) -> referenced
+    \edef\@hogan@target@x{#2}%
+    \edef\@hogan@target@y{#3}%
+    \edef\@hogan@ref@x{#4}%
+    \edef\@hogan@ref@y{#5}%
+    \edef\@hogan@tmp{%
+        \edef
+            \unexpanded\expandafter{%
+                \csname @hogan@#1@\@hogan@target@x @\@hogan@target@y\endcsname}{%
+            \noexpand\the\noexpand\numexpr
+                \unexpanded\expandafter{%
+                    \csname @hogan@#1@\@hogan@ref@x @\@hogan@ref@y\endcsname}%
+                +1}}%
+    \edef\@hogan@stack@cell@size{%
+        \unexpanded\expandafter{\@hogan@tmp}%
+        \unexpanded\expandafter{\@hogan@stack@cell@size}}%
+}
+% hline special definitions
+\expandafter\def\csname @hogan@hline@next@+\endcsname#1{%
+    \edef\@hogan@hline@next{\noexpand\@hogan@hline@gobble{\the\numexpr#1+1}+}%
+}
+\expandafter\def\csname @hogan@hline@next@&\endcsname#1{%
+    \@hogan@h@common{#1}%
+    % caluclate cell size
+    \edef\@hogan@tmp@y{\the\numexpr\@hogan@cells@y-\@hogan@linecount}%
+    \@hogan@add@stack@cell@size{v}{#1}{\the\numexpr\@hogan@tmp@y-1}{#1}{\@hogan@tmp@y}%
+}
+
+% vline special definitions
 \expandafter\def\csname @hogan@vline@next@.\endcsname#1{%
-    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
+    \@hogan@v@common{#1}%
 }
-\expandafter\def\csname @hogan@vline@next@|\endcsname#1{%
-    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
-    \draw[red] (#1, \the\numexpr\@hogan@linecount+1) -- (#1, \@hogan@linecount);
+\expandafter\def\csname @hogan@vline@next@&\endcsname#1{%
+    \@hogan@v@common{#1}%
+    % caluclate cell size
+    \edef\@hogan@tmp@y{\the\numexpr\@hogan@cells@y-\@hogan@linecount-1}%
+    \@hogan@add@stack@cell@size{h}{\the\numexpr#1-1}{\@hogan@tmp@y}{#1}{\@hogan@tmp@y}%
 }
-\expandafter\def\csname @hogan@vline@next@*\endcsname#1{%
-    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
-    \draw[very thick,red] (#1, \the\numexpr\@hogan@linecount+1) -- (#1, \@hogan@linecount);
+%% textboxes
+%%% common
+\def\@hogan@add@stack@cell@text#1#2#3#4{% #1 -> text command, (#2,#3) -> target cell, #4 -> text
+    \edef\@hogan@target@x{#2}%
+    \edef\@hogan@target@y{#3}%
+    \edef\@hogan@tmp{%
+        \noexpand#1[at={(\@hogan@target@x,\@hogan@target@y)},%
+                    align=center,% TODO
+                    box=\unexpanded\expandafter{\csname @hogan@h@\@hogan@target@x @\@hogan@target@y\endcsname}%
+                    *\unexpanded\expandafter{\csname @hogan@v@\@hogan@target@x @\@hogan@target@y\endcsname}]{%
+                    \unexpanded{#4}}%
+    }%
+    \edef\@hogan@stack@cell@text{%
+        \unexpanded\expandafter{\@hogan@tmp}%
+        \unexpanded\expandafter{\@hogan@stack@cell@text}}%
 }
-\expandafter\def\csname @hogan@vline@next@:\endcsname#1{%
-    \edef\@hogan@vline@next{\noexpand\@hogan@vline{\the\numexpr#1+1}}%
-    \draw[dash pattern=on 0.25mm off 0.25mm, red] (#1, \the\numexpr\@hogan@linecount+1) -- (#1, \@hogan@linecount);
+\def\@hogan@repeat@span#1{% #1 -> num
+    \ifnum#1>1 &\expandafter\@hogan@repeat@span\expandafter{\the\numexpr#1-1}\fi
+}
+%%% center
+\expandafter\def\csname @hogan@vline@next@\@hogan@const@cbox\endcsname#1{%
+    \def\@hogan@vline@next{\@hogan@create@cbox{#1}}%
+}
+\def\@hogan@create@cbox#1{%
+    \@ifnextchar[{\@hogan@create@cbox@{#1}}{\@hogan@create@cbox@{#1}[1]}%
+}
+\def\@hogan@create@cbox@#1[#2]#3{% #1 -> cell count, #2 -> num of span cells, #3 -> text
+    % cell stack
+    \@hogan@add@stack@cell@text\ctextbox{\the\numexpr#1-1}{\the\numexpr\@hogan@cells@y-\@hogan@linecount-1}{#3}%
+    % TODO span cells
+    \edef\@hogan@vline@next{\noexpand\@hogan@vline{#1}\@hogan@repeat@span{#2}}%
+    \@hogan@vline@next
 }
 
-
-
-% Main envieonments' Options
+% Text box commands' Options
 \define@cmdkey{textbox}{at}[(0,0)]{\@hogan@tbox@set@at#1}
 \def\@hogan@tbox@set@at(#1,#2){%
     \def\@hogan@tbox@x{#1}%
